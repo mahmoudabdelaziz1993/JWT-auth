@@ -11,15 +11,9 @@ async function authorizedToken(req, res, next) {
     }
     try {
         let payload = await jwt.verify(accessToken, process.env.JWT_TOKEN_SEC);
-        console.log("payload", payload);
         let user = await User.findById(payload.id);
-        console.log("user", user);
-        console.log("compare password",await user.comparePassword(req.body.password));
-        if (await user.comparePassword(req.body.password)&& req.body.email == user.email) {
             req.user = user;
             next();
-        }
-        res.sendStatus(401);
     } catch (error) {
         res.sendStatus(401);
     }

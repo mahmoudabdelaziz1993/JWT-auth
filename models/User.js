@@ -30,12 +30,28 @@ UserSchema.virtual('username').get(function () {
     return this.firstName + ' ' + this.lastName;
 });
 UserSchema.virtual('accessToken').get(function () {
-    return jwt.sign({ id: this.id, password: this.password }, process.env.JWT_TOKEN_SEC, { expiresIn: '1h' });
+    return jwt.sign({ id: this.id, password: this.password }, process.env.JWT_TOKEN_SEC, { expiresIn: "1d" });
+});
+
+UserSchema.virtual('refreshToken').get(function () {
+    return jwt.sign({ id: this.id, password: this.password }, process.env.JWT_TOKEN_REFRESH, { expiresIn: "2d" });
 });
 
 UserSchema.statics.emailIsTaken = async function (email) {
     let user = await this.findOne({ email: email });
     return _.isEmpty(user) ? false : true;
+}
+UserSchema.statics.refreshToken = async function (password, token) {
+    console.log("password",password);
+    console.log("token",token);
+    let payload = await jwt.verify(token, process.env.JWT_TOKEN_REFRESH);
+    
+    let user = await this.findById(payload.id);
+    console.log("compare ",await user.comparePassword(password));
+    if (await user.comparePassword(password)) {
+        return jwt.sign({ id: this.id, password: this.password }, process.env.JWT_TOKEN_SEC, { expiresIn: "1d" })
+    }
+    throw new Error('corrupted ');
 }
 
 UserSchema.methods.comparePassword = async function (pass) {

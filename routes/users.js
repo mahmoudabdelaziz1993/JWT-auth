@@ -2,7 +2,6 @@ const router = require('express').Router();
 const User = require('../models/User');
 const { body, check, validationResult } = require('express-validator');
 const _ = require('lodash');
-const authorized = require('../middlewares/JWTauth');
 
 
 
@@ -24,7 +23,7 @@ router.post('/login', [
         }
         try {
             let user = await User.isValidUser(req.body.email, req.body.password);
-            res.send({ accessToken: user.accessToken });
+            res.send({ accessToken: user.accessToken , refreshToken :user.refreshToken});
         } catch (error) {
             res.sendStatus(400)
         }
@@ -71,8 +70,16 @@ router.post('/register', [
         });
     });
 
-router.get('/logout', (req, res) => {
-    res.status(304).send({ success: true });
+router.post('/refresh',[
+    check('password').isLength(5)
+],async  (req, res) => {
+    let token  = req.header('refresh').split(' ')[1]
+    try {
+        let Refresh_Token = await User.refreshToken(req.body.password,token);
+        res.send({Refresh_Token});
+    } catch (error) {
+        res.sendStatus(400)
+    }
 });
 
 module.exports = router;
